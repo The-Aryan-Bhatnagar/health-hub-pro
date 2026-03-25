@@ -1,8 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
+  const handleLogout = () => { sessionStorage.removeItem("hms_auth"); navigate("/login"); };
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -12,6 +16,9 @@ export default function DashboardLayout() {
             <SidebarTrigger />
             <div className="flex-1" />
             <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+                <LogOut className="h-4 w-4 mr-1.5" /> Logout
+              </Button>
               <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-sm font-semibold text-primary">A</span>
               </div>
