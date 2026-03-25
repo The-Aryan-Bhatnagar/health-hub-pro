@@ -32,10 +32,10 @@ export default function Landing() {
             <span className="text-lg font-bold text-foreground">MediCore</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/admin">
+            <Link to="/login">
               <Button variant="outline" size="sm">Admin Login</Button>
             </Link>
-            <Link to="/admin">
+            <Link to="/login">
               <Button size="sm">
                 Get Started <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -66,7 +66,7 @@ export default function Landing() {
               A comprehensive platform to manage patients, doctors, appointments, billing, pharmacy, and analytics — all from one powerful dashboard.
             </p>
             <div className="flex items-center justify-center gap-4">
-              <Link to="/admin">
+              <Link to="/login">
                 <Button size="lg" className="px-8 h-12 text-base font-semibold shadow-lg">
                   Open Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -131,7 +131,7 @@ export default function Landing() {
           <p className="text-primary-foreground/70 mb-8 max-w-lg mx-auto">
             Get started today and experience a smarter way to manage healthcare operations.
           </p>
-          <Link to="/admin">
+          <Link to="/login">
             <Button size="lg" variant="secondary" className="px-8 h-12 text-base font-semibold">
               Access Admin Panel <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
