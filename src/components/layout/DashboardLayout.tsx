@@ -5,6 +5,8 @@ import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
+  const handleLogout = () => { sessionStorage.removeItem("hms_auth"); navigate("/login"); };
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
