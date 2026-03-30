@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Invoice {
   id: string;
@@ -23,6 +25,55 @@ const statusStyle: Record<string, string> = {
   Paid: "bg-success/10 text-success border-0",
   Pending: "bg-warning/10 text-warning border-0",
   Overdue: "bg-destructive/10 text-destructive border-0",
+};
+
+const downloadInvoice = (invoice: Invoice) => {
+  const doc = new jsPDF();
+
+  // Header
+  doc.setFontSize(22);
+  doc.setTextColor(33, 37, 41);
+  doc.text("MediCore", 20, 25);
+  doc.setFontSize(10);
+  doc.setTextColor(108, 117, 125);
+  doc.text("Hospital Management System", 20, 32);
+
+  // Invoice title
+  doc.setFontSize(16);
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Invoice: ${invoice.invoice_no}`, 20, 50);
+
+  // Info
+  doc.setFontSize(11);
+  doc.setTextColor(73, 80, 87);
+  doc.text(`Date: ${invoice.date}`, 20, 62);
+  doc.text(`Patient: ${invoice.patient}`, 20, 70);
+  doc.text(`Status: ${invoice.status}`, 20, 78);
+
+  // Table
+  autoTable(doc, {
+    startY: 90,
+    head: [["Services", "Amount"]],
+    body: [[invoice.services, `$${Number(invoice.amount).toLocaleString()}`]],
+    theme: "grid",
+    headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+    styles: { fontSize: 11 },
+  });
+
+  const finalY = (doc as any).lastAutoTable?.finalY || 120;
+
+  // Total
+  doc.setFontSize(13);
+  doc.setTextColor(33, 37, 41);
+  doc.text(`Total: $${Number(invoice.amount).toLocaleString()}`, 20, finalY + 15);
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text("Thank you for choosing MediCore Hospital.", 20, 280);
+
+  doc.save(`${invoice.invoice_no}.pdf`);
+  toast.success(`Downloaded ${invoice.invoice_no}`);
 };
 
 export default function Billing() {
@@ -94,11 +145,12 @@ export default function Billing() {
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">Amount</th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">Date</th>
                 <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+                <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
               ) : filtered.map(i => (
                 <tr key={i.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                   <td className="py-3 px-4 font-medium text-primary">{i.invoice_no}</td>
@@ -107,6 +159,11 @@ export default function Billing() {
                   <td className="py-3 px-4 font-semibold text-foreground">${Number(i.amount).toLocaleString()}</td>
                   <td className="py-3 px-4 text-muted-foreground">{i.date}</td>
                   <td className="py-3 px-4"><Badge variant="outline" className={statusStyle[i.status]}>{i.status}</Badge></td>
+                  <td className="py-3 px-4">
+                    <Button variant="ghost" size="sm" onClick={() => downloadInvoice(i)} className="text-primary hover:text-primary/80">
+                      <Download className="h-4 w-4 mr-1" /> PDF
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
