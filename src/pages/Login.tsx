@@ -62,7 +62,7 @@ export default function Login() {
             <Label>Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@gmail.com" className="pl-10" required />
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="MediCore@gmail.ocm" className="pl-10" required />
             </div>
           </div>
 
