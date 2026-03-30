@@ -1,29 +1,23 @@
-import { useState } from "react";
-import { Plus, Search, DollarSign } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Invoice {
-  id: number;
-  invoiceNo: string;
+  id: string;
+  invoice_no: string;
   patient: string;
   services: string;
   amount: number;
   date: string;
   status: string;
 }
-
-const initialInvoices: Invoice[] = [
-  { id: 1, invoiceNo: "INV-001", patient: "Sarah Johnson", services: "Consultation, ECG", amount: 350, date: "2026-03-25", status: "Paid" },
-  { id: 2, invoiceNo: "INV-002", patient: "Mike Chen", services: "MRI Scan", amount: 1200, date: "2026-03-24", status: "Pending" },
-  { id: 3, invoiceNo: "INV-003", patient: "Emily Davis", services: "Blood Test, X-Ray", amount: 480, date: "2026-03-23", status: "Paid" },
-  { id: 4, invoiceNo: "INV-004", patient: "James Brown", services: "Surgery Consultation", amount: 750, date: "2026-03-22", status: "Overdue" },
-  { id: 5, invoiceNo: "INV-005", patient: "Lisa Wang", services: "Dental Cleaning", amount: 200, date: "2026-03-21", status: "Paid" },
-];
 
 const statusStyle: Record<string, string> = {
   Paid: "bg-success/10 text-success border-0",
@@ -32,22 +26,36 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function Billing() {
-  const [invoices, setInvoices] = useState(initialInvoices);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ patient: "", services: "", amount: "" });
 
-  const filtered = invoices.filter(i => i.patient.toLowerCase().includes(search.toLowerCase()));
-
-  const handleAdd = () => {
-    if (!form.patient) return;
-    const no = `INV-${String(invoices.length + 1).padStart(3, "0")}`;
-    setInvoices(prev => [...prev, { ...form, id: Date.now(), invoiceNo: no, amount: Number(form.amount), date: new Date().toISOString().slice(0, 10), status: "Pending" }]);
-    setForm({ patient: "", services: "", amount: "" });
-    setOpen(false);
+  const fetchInvoices = async () => {
+    const { data, error } = await supabase.from("invoices").select("*").order("created_at", { ascending: false });
+    if (error) { toast.error("Failed to load invoices"); return; }
+    setInvoices(data || []);
+    setLoading(false);
   };
 
-  const totalRevenue = invoices.filter(i => i.status === "Paid").reduce((s, i) => s + i.amount, 0);
+  useEffect(() => { fetchInvoices(); }, []);
+
+  const filtered = invoices.filter(i => i.patient.toLowerCase().includes(search.toLowerCase()));
+  const totalRevenue = invoices.filter(i => i.status === "Paid").reduce((s, i) => s + Number(i.amount), 0);
+
+  const handleAdd = async () => {
+    if (!form.patient) return;
+    const no = `INV-${String(invoices.length + 1).padStart(3, "0")}`;
+    const { error } = await supabase.from("invoices").insert({
+      invoice_no: no, patient: form.patient, services: form.services, amount: Number(form.amount), date: new Date().toISOString().slice(0, 10), status: "Pending",
+    });
+    if (error) { toast.error("Failed to create invoice"); return; }
+    toast.success("Invoice created");
+    setForm({ patient: "", services: "", amount: "" });
+    setOpen(false);
+    fetchInvoices();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -57,9 +65,7 @@ export default function Billing() {
           <p className="text-sm text-muted-foreground mt-1">Total Revenue: <span className="text-success font-semibold">${totalRevenue.toLocaleString()}</span></p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Create Invoice</Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Create Invoice</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Generate Invoice</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -91,12 +97,14 @@ export default function Billing() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(i => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : filtered.map(i => (
                 <tr key={i.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                  <td className="py-3 px-4 font-medium text-primary">{i.invoiceNo}</td>
+                  <td className="py-3 px-4 font-medium text-primary">{i.invoice_no}</td>
                   <td className="py-3 px-4 font-medium text-foreground">{i.patient}</td>
                   <td className="py-3 px-4 text-muted-foreground">{i.services}</td>
-                  <td className="py-3 px-4 font-semibold text-foreground">${i.amount.toLocaleString()}</td>
+                  <td className="py-3 px-4 font-semibold text-foreground">${Number(i.amount).toLocaleString()}</td>
                   <td className="py-3 px-4 text-muted-foreground">{i.date}</td>
                   <td className="py-3 px-4"><Badge variant="outline" className={statusStyle[i.status]}>{i.status}</Badge></td>
                 </tr>

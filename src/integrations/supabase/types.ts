@@ -14,7 +14,195 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          created_at: string
+          date: string
+          doctor: string
+          id: string
+          patient: string
+          status: string
+          time: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          doctor: string
+          id?: string
+          patient: string
+          status?: string
+          time?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          doctor?: string
+          id?: string
+          patient?: string
+          status?: string
+          time?: string
+        }
+        Relationships: []
+      }
+      doctors: {
+        Row: {
+          availability: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          specialization: string
+          status: string
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          specialization?: string
+          status?: string
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          specialization?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          invoice_no: string
+          patient: string
+          services: string | null
+          status: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          invoice_no: string
+          patient: string
+          services?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          invoice_no?: string
+          patient?: string
+          services?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      medicines: {
+        Row: {
+          category: string | null
+          created_at: string
+          expiry: string | null
+          id: string
+          name: string
+          price: number
+          quantity: number
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          expiry?: string | null
+          id?: string
+          name: string
+          price?: number
+          quantity?: number
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          expiry?: string | null
+          id?: string
+          name?: string
+          price?: number
+          quantity?: number
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          address: string | null
+          age: number
+          created_at: string
+          gender: string
+          id: string
+          last_visit: string | null
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          age?: number
+          created_at?: string
+          gender?: string
+          id?: string
+          last_visit?: string | null
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          age?: number
+          created_at?: string
+          gender?: string
+          id?: string
+          last_visit?: string | null
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      staff: {
+        Row: {
+          created_at: string
+          department: string | null
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          role?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

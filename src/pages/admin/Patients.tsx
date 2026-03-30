@@ -1,43 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Patient {
-  id: number;
+  id: string;
   name: string;
   age: number;
   gender: string;
   phone: string;
   address: string;
-  lastVisit: string;
+  last_visit: string;
 }
 
-const initialPatients: Patient[] = [
-  { id: 1, name: "Sarah Johnson", age: 34, gender: "Female", phone: "+1 555-1001", address: "123 Oak St", lastVisit: "2026-03-20" },
-  { id: 2, name: "Mike Chen", age: 45, gender: "Male", phone: "+1 555-1002", address: "456 Elm Ave", lastVisit: "2026-03-22" },
-  { id: 3, name: "Emily Davis", age: 28, gender: "Female", phone: "+1 555-1003", address: "789 Pine Rd", lastVisit: "2026-03-18" },
-  { id: 4, name: "James Brown", age: 52, gender: "Male", phone: "+1 555-1004", address: "321 Maple Dr", lastVisit: "2026-03-24" },
-  { id: 5, name: "Lisa Wang", age: 39, gender: "Female", phone: "+1 555-1005", address: "654 Cedar Ln", lastVisit: "2026-03-15" },
-  { id: 6, name: "Robert Taylor", age: 61, gender: "Male", phone: "+1 555-1006", address: "987 Birch Ct", lastVisit: "2026-03-10" },
-];
-
 export default function Patients() {
-  const [patients, setPatients] = useState(initialPatients);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", age: "", gender: "Male", phone: "", address: "" });
+
+  const fetchPatients = async () => {
+    const { data, error } = await supabase.from("patients").select("*").order("created_at", { ascending: false });
+    if (error) { toast.error("Failed to load patients"); return; }
+    setPatients(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchPatients(); }, []);
 
   const filtered = patients.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name) return;
-    setPatients(prev => [...prev, { ...form, id: Date.now(), age: Number(form.age), lastVisit: new Date().toISOString().slice(0, 10) }]);
+    const { error } = await supabase.from("patients").insert({
+      name: form.name, age: Number(form.age), gender: form.gender, phone: form.phone, address: form.address, last_visit: new Date().toISOString().slice(0, 10),
+    });
+    if (error) { toast.error("Failed to add patient"); return; }
+    toast.success("Patient registered");
     setForm({ name: "", age: "", gender: "Male", phone: "", address: "" });
     setOpen(false);
+    fetchPatients();
   };
 
   return (
@@ -48,9 +56,7 @@ export default function Patients() {
           <p className="text-sm text-muted-foreground mt-1">{patients.length} patients registered</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Patient</Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Add Patient</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Register New Patient</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -85,13 +91,15 @@ export default function Patients() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(p => (
+              {loading ? (
+                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : filtered.map(p => (
                 <tr key={p.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                   <td className="py-3 px-4 font-medium text-foreground">{p.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{p.age}</td>
                   <td className="py-3 px-4 text-muted-foreground">{p.gender}</td>
                   <td className="py-3 px-4 text-muted-foreground">{p.phone}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{p.lastVisit}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{p.last_visit}</td>
                 </tr>
               ))}
             </tbody>
