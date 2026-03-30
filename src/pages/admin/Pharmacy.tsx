@@ -64,7 +64,7 @@ export default function Pharmacy() {
               <div><Label>Category</Label><Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} /></div>
-                <div><Label>Price ($)</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} /></div>
+                <div><Label>Price (₹)</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} /></div>
               </div>
               <div><Label>Expiry Date</Label><Input type="date" value={form.expiry} onChange={e => setForm(p => ({ ...p, expiry: e.target.value }))} /></div>
               <Button onClick={handleAdd} className="w-full">Add Medicine</Button>
