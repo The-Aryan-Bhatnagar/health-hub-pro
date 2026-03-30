@@ -99,7 +99,7 @@ export default function Pharmacy() {
                   <td className="py-3 px-4 font-medium text-foreground">{m.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.category}</td>
                   <td className="py-3 px-4 text-foreground">{m.quantity}</td>
-                  <td className="py-3 px-4 text-foreground">${Number(m.price).toFixed(2)}</td>
+                  <td className="py-3 px-4 text-foreground">₹{Number(m.price).toFixed(2)}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.expiry}</td>
                   <td className="py-3 px-4">
                     {m.quantity < 50 ? (
