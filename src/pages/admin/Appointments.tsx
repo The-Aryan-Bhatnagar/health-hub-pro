@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,25 +6,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Appointment {
-  id: number;
+  id: string;
   patient: string;
   doctor: string;
   date: string;
   time: string;
   status: string;
 }
-
-const initialAppointments: Appointment[] = [
-  { id: 1, patient: "Sarah Johnson", doctor: "Dr. Smith", date: "2026-03-25", time: "09:00 AM", status: "Completed" },
-  { id: 2, patient: "Mike Chen", doctor: "Dr. Patel", date: "2026-03-25", time: "10:30 AM", status: "In Progress" },
-  { id: 3, patient: "Emily Davis", doctor: "Dr. Wilson", date: "2026-03-25", time: "11:00 AM", status: "Pending" },
-  { id: 4, patient: "James Brown", doctor: "Dr. Lee", date: "2026-03-25", time: "02:00 PM", status: "Pending" },
-  { id: 5, patient: "Lisa Wang", doctor: "Dr. Kumar", date: "2026-03-26", time: "09:30 AM", status: "Scheduled" },
-  { id: 6, patient: "Robert Taylor", doctor: "Dr. Chen", date: "2026-03-26", time: "11:00 AM", status: "Scheduled" },
-];
 
 const statusStyle: Record<string, string> = {
   Completed: "bg-success/10 text-success border-0",
@@ -35,21 +27,31 @@ const statusStyle: Record<string, string> = {
 };
 
 export default function Appointments() {
-  const [appointments, setAppointments] = useState(initialAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ patient: "", doctor: "", date: "", time: "" });
 
-  const filtered = appointments.filter(a =>
-    a.patient.toLowerCase().includes(search.toLowerCase()) ||
-    a.doctor.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchAppointments = async () => {
+    const { data, error } = await supabase.from("appointments").select("*").order("date", { ascending: false });
+    if (error) { toast.error("Failed to load appointments"); return; }
+    setAppointments(data || []);
+    setLoading(false);
+  };
 
-  const handleAdd = () => {
+  useEffect(() => { fetchAppointments(); }, []);
+
+  const filtered = appointments.filter(a => a.patient.toLowerCase().includes(search.toLowerCase()) || a.doctor.toLowerCase().includes(search.toLowerCase()));
+
+  const handleAdd = async () => {
     if (!form.patient || !form.doctor) return;
-    setAppointments(prev => [...prev, { ...form, id: Date.now(), status: "Scheduled" }]);
+    const { error } = await supabase.from("appointments").insert({ ...form, status: "Scheduled" });
+    if (error) { toast.error("Failed to book appointment"); return; }
+    toast.success("Appointment booked");
     setForm({ patient: "", doctor: "", date: "", time: "" });
     setOpen(false);
+    fetchAppointments();
   };
 
   return (
@@ -60,9 +62,7 @@ export default function Appointments() {
           <p className="text-sm text-muted-foreground mt-1">{appointments.length} total appointments</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Book Appointment</Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Book Appointment</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Book New Appointment</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -96,15 +96,15 @@ export default function Appointments() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(a => (
+              {loading ? (
+                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : filtered.map(a => (
                 <tr key={a.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                   <td className="py-3 px-4 font-medium text-foreground">{a.patient}</td>
                   <td className="py-3 px-4 text-muted-foreground">{a.doctor}</td>
                   <td className="py-3 px-4 text-muted-foreground">{a.date}</td>
                   <td className="py-3 px-4 text-muted-foreground">{a.time}</td>
-                  <td className="py-3 px-4">
-                    <Badge variant="outline" className={statusStyle[a.status]}>{a.status}</Badge>
-                  </td>
+                  <td className="py-3 px-4"><Badge variant="outline" className={statusStyle[a.status]}>{a.status}</Badge></td>
                 </tr>
               ))}
             </tbody>

@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { Users, Stethoscope, CalendarDays, DollarSign, TrendingUp, Activity } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
 const revenueData = [
   { month: "Jan", revenue: 42000 },
@@ -23,14 +25,6 @@ const patientData = [
   { month: "Jul", patients: 248 },
 ];
 
-const recentAppointments = [
-  { patient: "Sarah Johnson", doctor: "Dr. Smith", time: "09:00 AM", status: "Completed" },
-  { patient: "Mike Chen", doctor: "Dr. Patel", time: "10:30 AM", status: "In Progress" },
-  { patient: "Emily Davis", doctor: "Dr. Wilson", time: "11:00 AM", status: "Pending" },
-  { patient: "James Brown", doctor: "Dr. Lee", time: "02:00 PM", status: "Pending" },
-  { patient: "Lisa Wang", doctor: "Dr. Kumar", time: "03:30 PM", status: "Scheduled" },
-];
-
 const statusColor: Record<string, string> = {
   Completed: "bg-success/10 text-success",
   "In Progress": "bg-info/10 text-info",
@@ -38,7 +32,40 @@ const statusColor: Record<string, string> = {
   Scheduled: "bg-primary/10 text-primary",
 };
 
+interface DashStats {
+  patients: number;
+  doctors: number;
+  todayAppointments: number;
+  revenue: number;
+  recentAppointments: { patient: string; doctor: string; time: string; status: string }[];
+}
+
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashStats>({ patients: 0, doctors: 0, todayAppointments: 0, revenue: 0, recentAppointments: [] });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const [pRes, dRes, aRes, iRes] = await Promise.all([
+        supabase.from("patients").select("id", { count: "exact", head: true }),
+        supabase.from("doctors").select("id", { count: "exact", head: true }),
+        supabase.from("appointments").select("*").order("created_at", { ascending: false }).limit(5),
+        supabase.from("invoices").select("amount, status"),
+      ]);
+
+      const revenue = (iRes.data || []).filter(i => i.status === "Paid").reduce((s, i) => s + Number(i.amount), 0);
+      const recent = (aRes.data || []).map(a => ({ patient: a.patient, doctor: a.doctor, time: a.time, status: a.status }));
+
+      setStats({
+        patients: pRes.count || 0,
+        doctors: dRes.count || 0,
+        todayAppointments: (aRes.data || []).length,
+        revenue,
+        recentAppointments: recent,
+      });
+    };
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -47,10 +74,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard icon={Users} title="Total Patients" value="1,284" change="+12% from last month" changeType="positive" />
-        <StatCard icon={Stethoscope} title="Active Doctors" value="48" change="+3 new this month" changeType="positive" />
-        <StatCard icon={CalendarDays} title="Today's Appointments" value="24" change="6 remaining" changeType="neutral" />
-        <StatCard icon={DollarSign} title="Revenue (MTD)" value="$62,400" change="+8.2% from last month" changeType="positive" iconColor="bg-success/10" />
+        <StatCard icon={Users} title="Total Patients" value={stats.patients.toLocaleString()} change="+12% from last month" changeType="positive" />
+        <StatCard icon={Stethoscope} title="Active Doctors" value={String(stats.doctors)} change="+3 new this month" changeType="positive" />
+        <StatCard icon={CalendarDays} title="Recent Appointments" value={String(stats.todayAppointments)} change="Latest 5" changeType="neutral" />
+        <StatCard icon={DollarSign} title="Revenue (Paid)" value={`$${stats.revenue.toLocaleString()}`} change="+8.2% from last month" changeType="positive" iconColor="bg-success/10" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -92,7 +119,7 @@ export default function Dashboard() {
       </div>
 
       <Card className="p-6 shadow-[var(--shadow-card)] border-border/50">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Today's Appointments</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-4">Recent Appointments</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -104,13 +131,13 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentAppointments.map((a, i) => (
+              {stats.recentAppointments.map((a, i) => (
                 <tr key={i} className="border-b border-border/30 hover:bg-muted/30 transition-colors">
                   <td className="py-3 px-4 font-medium text-foreground">{a.patient}</td>
                   <td className="py-3 px-4 text-muted-foreground">{a.doctor}</td>
                   <td className="py-3 px-4 text-muted-foreground">{a.time}</td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status]}`}>
+                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status] || ''}`}>
                       {a.status}
                     </span>
                   </td>

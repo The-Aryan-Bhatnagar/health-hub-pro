@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-interface Staff {
-  id: number;
+interface StaffMember {
+  id: string;
   name: string;
   role: string;
   department: string;
@@ -16,32 +18,37 @@ interface Staff {
   status: string;
 }
 
-const initialStaff: Staff[] = [
-  { id: 1, name: "Anna Rodriguez", role: "Head Nurse", department: "ICU", phone: "+1 555-2001", status: "Active" },
-  { id: 2, name: "Tom Baker", role: "Receptionist", department: "Front Desk", phone: "+1 555-2002", status: "Active" },
-  { id: 3, name: "Grace Kim", role: "Lab Technician", department: "Pathology", phone: "+1 555-2003", status: "Active" },
-  { id: 4, name: "David Okafor", role: "Nurse", department: "Emergency", phone: "+1 555-2004", status: "On Leave" },
-  { id: 5, name: "Maria Santos", role: "Pharmacist", department: "Pharmacy", phone: "+1 555-2005", status: "Active" },
-];
-
 const statusStyle: Record<string, string> = {
   Active: "bg-success/10 text-success border-0",
   "On Leave": "bg-warning/10 text-warning border-0",
 };
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState(initialStaff);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", role: "", department: "", phone: "" });
+
+  const fetchStaff = async () => {
+    const { data, error } = await supabase.from("staff").select("*").order("created_at", { ascending: false });
+    if (error) { toast.error("Failed to load staff"); return; }
+    setStaff(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchStaff(); }, []);
 
   const filtered = staff.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name) return;
-    setStaff(prev => [...prev, { ...form, id: Date.now(), status: "Active" }]);
+    const { error } = await supabase.from("staff").insert({ ...form, status: "Active" });
+    if (error) { toast.error("Failed to add staff"); return; }
+    toast.success("Staff member added");
     setForm({ name: "", role: "", department: "", phone: "" });
     setOpen(false);
+    fetchStaff();
   };
 
   return (
@@ -52,9 +59,7 @@ export default function StaffPage() {
           <p className="text-sm text-muted-foreground mt-1">{staff.length} staff members</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Staff</Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Add Staff</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add Staff Member</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -86,7 +91,9 @@ export default function StaffPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(s => (
+              {loading ? (
+                <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : filtered.map(s => (
                 <tr key={s.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                   <td className="py-3 px-4 font-medium text-foreground">{s.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{s.role}</td>

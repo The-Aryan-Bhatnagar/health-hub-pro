@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Medicine {
-  id: number;
+  id: string;
   name: string;
   category: string;
   quantity: number;
@@ -16,28 +18,34 @@ interface Medicine {
   expiry: string;
 }
 
-const initialMeds: Medicine[] = [
-  { id: 1, name: "Amoxicillin 500mg", category: "Antibiotic", quantity: 450, price: 12.5, expiry: "2027-06-15" },
-  { id: 2, name: "Ibuprofen 200mg", category: "Pain Relief", quantity: 1200, price: 8.0, expiry: "2027-12-01" },
-  { id: 3, name: "Metformin 500mg", category: "Diabetes", quantity: 30, price: 15.0, expiry: "2026-08-20" },
-  { id: 4, name: "Omeprazole 20mg", category: "Gastro", quantity: 680, price: 10.0, expiry: "2027-03-10" },
-  { id: 5, name: "Lisinopril 10mg", category: "Cardiac", quantity: 15, price: 18.5, expiry: "2026-05-01" },
-  { id: 6, name: "Cetirizine 10mg", category: "Allergy", quantity: 900, price: 6.0, expiry: "2028-01-15" },
-];
-
 export default function Pharmacy() {
-  const [meds, setMeds] = useState(initialMeds);
+  const [meds, setMeds] = useState<Medicine[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", category: "", quantity: "", price: "", expiry: "" });
+
+  const fetchMeds = async () => {
+    const { data, error } = await supabase.from("medicines").select("*").order("created_at", { ascending: false });
+    if (error) { toast.error("Failed to load medicines"); return; }
+    setMeds(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchMeds(); }, []);
 
   const filtered = meds.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name) return;
-    setMeds(prev => [...prev, { ...form, id: Date.now(), quantity: Number(form.quantity), price: Number(form.price) }]);
+    const { error } = await supabase.from("medicines").insert({
+      name: form.name, category: form.category, quantity: Number(form.quantity), price: Number(form.price), expiry: form.expiry || null,
+    });
+    if (error) { toast.error("Failed to add medicine"); return; }
+    toast.success("Medicine added");
     setForm({ name: "", category: "", quantity: "", price: "", expiry: "" });
     setOpen(false);
+    fetchMeds();
   };
 
   return (
@@ -48,9 +56,7 @@ export default function Pharmacy() {
           <p className="text-sm text-muted-foreground mt-1">{meds.length} medicines in stock</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Add Medicine</Button>
-          </DialogTrigger>
+          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Add Medicine</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Add New Medicine</DialogTitle></DialogHeader>
             <div className="space-y-4 pt-2">
@@ -86,12 +92,14 @@ export default function Pharmacy() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(m => (
+              {loading ? (
+                <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+              ) : filtered.map(m => (
                 <tr key={m.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
                   <td className="py-3 px-4 font-medium text-foreground">{m.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.category}</td>
                   <td className="py-3 px-4 text-foreground">{m.quantity}</td>
-                  <td className="py-3 px-4 text-foreground">${m.price.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-foreground">${Number(m.price).toFixed(2)}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.expiry}</td>
                   <td className="py-3 px-4">
                     {m.quantity < 50 ? (
