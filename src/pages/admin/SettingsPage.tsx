@@ -8,7 +8,7 @@ import { Heart } from "lucide-react";
 export default function SettingsPage() {
   const [hospitalName, setHospitalName] = useState("MediCore General Hospital");
   const [email, setEmail] = useState("MediCore@gmail.com");
-  const [phone, setPhone] = useState("+1 555-0000");
+  const [phone, setPhone] = useState("+91 98765-00000");
 
   return (
     <div className="space-y-6 animate-fade-in max-w-2xl">
