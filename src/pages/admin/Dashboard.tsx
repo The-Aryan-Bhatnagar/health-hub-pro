@@ -77,7 +77,7 @@ export default function Dashboard() {
         <StatCard icon={Users} title="Total Patients" value={stats.patients.toLocaleString()} change="+12% from last month" changeType="positive" />
         <StatCard icon={Stethoscope} title="Active Doctors" value={String(stats.doctors)} change="+3 new this month" changeType="positive" />
         <StatCard icon={CalendarDays} title="Recent Appointments" value={String(stats.todayAppointments)} change="Latest 5" changeType="neutral" />
-        <StatCard icon={DollarSign} title="Revenue (Paid)" value={`$${stats.revenue.toLocaleString()}`} change="+8.2% from last month" changeType="positive" iconColor="bg-success/10" />
+        <StatCard icon={DollarSign} title="Revenue (Paid)" value={`₹${stats.revenue.toLocaleString("en-IN")}`} change="+8.2% from last month" changeType="positive" iconColor="bg-success/10" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

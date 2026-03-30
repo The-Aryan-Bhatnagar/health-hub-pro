@@ -54,7 +54,7 @@ const downloadInvoice = (invoice: Invoice) => {
   autoTable(doc, {
     startY: 90,
     head: [["Services", "Amount"]],
-    body: [[invoice.services, `$${Number(invoice.amount).toLocaleString()}`]],
+    body: [[invoice.services, `₹${Number(invoice.amount).toLocaleString("en-IN")}`]],
     theme: "grid",
     headStyles: { fillColor: [59, 130, 246], textColor: 255 },
     styles: { fontSize: 11 },
@@ -65,7 +65,7 @@ const downloadInvoice = (invoice: Invoice) => {
   // Total
   doc.setFontSize(13);
   doc.setTextColor(33, 37, 41);
-  doc.text(`Total: $${Number(invoice.amount).toLocaleString()}`, 20, finalY + 15);
+  doc.text(`Total: ₹${Number(invoice.amount).toLocaleString("en-IN")}`, 20, finalY + 15);
 
   // Footer
   doc.setFontSize(9);
@@ -113,7 +113,7 @@ export default function Billing() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Billing</h1>
-          <p className="text-sm text-muted-foreground mt-1">Total Revenue: <span className="text-success font-semibold">${totalRevenue.toLocaleString()}</span></p>
+          <p className="text-sm text-muted-foreground mt-1">Total Revenue: <span className="text-success font-semibold">₹{totalRevenue.toLocaleString("en-IN")}</span></p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" /> Create Invoice</Button></DialogTrigger>
@@ -122,7 +122,7 @@ export default function Billing() {
             <div className="space-y-4 pt-2">
               <div><Label>Patient Name</Label><Input value={form.patient} onChange={e => setForm(p => ({ ...p, patient: e.target.value }))} /></div>
               <div><Label>Services</Label><Input value={form.services} onChange={e => setForm(p => ({ ...p, services: e.target.value }))} placeholder="Consultation, X-Ray" /></div>
-              <div><Label>Amount ($)</Label><Input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} /></div>
+              <div><Label>Amount (₹)</Label><Input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} /></div>
               <Button onClick={handleAdd} className="w-full">Generate Invoice</Button>
             </div>
           </DialogContent>
@@ -156,7 +156,7 @@ export default function Billing() {
                   <td className="py-3 px-4 font-medium text-primary">{i.invoice_no}</td>
                   <td className="py-3 px-4 font-medium text-foreground">{i.patient}</td>
                   <td className="py-3 px-4 text-muted-foreground">{i.services}</td>
-                  <td className="py-3 px-4 font-semibold text-foreground">${Number(i.amount).toLocaleString()}</td>
+                  <td className="py-3 px-4 font-semibold text-foreground">₹{Number(i.amount).toLocaleString("en-IN")}</td>
                   <td className="py-3 px-4 text-muted-foreground">{i.date}</td>
                   <td className="py-3 px-4"><Badge variant="outline" className={statusStyle[i.status]}>{i.status}</Badge></td>
                   <td className="py-3 px-4">

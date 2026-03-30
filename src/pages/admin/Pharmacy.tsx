@@ -64,7 +64,7 @@ export default function Pharmacy() {
               <div><Label>Category</Label><Input value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} /></div>
-                <div><Label>Price ($)</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} /></div>
+                <div><Label>Price (₹)</Label><Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} /></div>
               </div>
               <div><Label>Expiry Date</Label><Input type="date" value={form.expiry} onChange={e => setForm(p => ({ ...p, expiry: e.target.value }))} /></div>
               <Button onClick={handleAdd} className="w-full">Add Medicine</Button>
@@ -99,7 +99,7 @@ export default function Pharmacy() {
                   <td className="py-3 px-4 font-medium text-foreground">{m.name}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.category}</td>
                   <td className="py-3 px-4 text-foreground">{m.quantity}</td>
-                  <td className="py-3 px-4 text-foreground">${Number(m.price).toFixed(2)}</td>
+                  <td className="py-3 px-4 text-foreground">₹{Number(m.price).toFixed(2)}</td>
                   <td className="py-3 px-4 text-muted-foreground">{m.expiry}</td>
                   <td className="py-3 px-4">
                     {m.quantity < 50 ? (
