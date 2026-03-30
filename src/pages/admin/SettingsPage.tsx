@@ -7,7 +7,7 @@ import { Heart } from "lucide-react";
 
 export default function SettingsPage() {
   const [hospitalName, setHospitalName] = useState("MediCore General Hospital");
-  const [email, setEmail] = useState("admin@medicore.com");
+  const [email, setEmail] = useState("MediCore@gmail.com");
   const [phone, setPhone] = useState("+1 555-0000");
 
   return (
